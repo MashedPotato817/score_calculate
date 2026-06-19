@@ -238,6 +238,9 @@ class DoudizhuApp(tk.Tk):
 
         self.tree.bind("<Double-1>",        self._on_tree_double_click)
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
+        self.tree.bind("<Return>",    lambda e: self._resume_selected())
+        self.tree.bind("<Delete>",    lambda e: self._delete_selected())
+        self.tree.bind("<BackSpace>", lambda e: self._delete_selected())
 
         bf = ttk.Frame(self.page2)
         bf.pack(fill=tk.X, pady=5, padx=10)
@@ -386,11 +389,12 @@ class DoudizhuApp(tk.Tk):
                 return
             active.status = "已结束"
 
-        last_players = self.games[-1].players[:] if self.games else ["玩家1", "玩家2", "玩家3"]
+        # 使用当前UI上显示的玩家名字，而不是最后大局的名字
+        current_players = [self.player_name_vars[i].get() for i in range(3)]
         now  = datetime.now().strftime("%Y-%m-%d %H:%M")
         game = BigGame(
             name=f"大局 #{len(self.games) + 1} {now}",
-            players=last_players,
+            players=current_players,
             status="进行中",
             rounds=[],
             created_at=now,
@@ -509,8 +513,10 @@ class DoudizhuApp(tk.Tk):
         else:
             self.p1_badge.config(text="未开始")
             self.p1_title.config(text="无进行中的大局")
+            # 保留最后大局的玩家名字，便于开始新大局时复用
+            last_players = self.games[-1].players[:] if self.games else [f"玩家{i+1}" for i in range(3)]
             for i in range(3):
-                self.player_name_vars[i].set(f"玩家{i+1}")
+                self.player_name_vars[i].set(last_players[i])
                 self.player_score_vars[i].set(0)
 
         self.landlord_idx = -1
